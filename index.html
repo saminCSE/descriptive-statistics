@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Descriptive Statistics Slide</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .slide {
+        width: 1280px;
+        height: 720px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 50px 60px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        color: #1a202c;
+        font-size: 2.5em;
+        font-weight: 700;
+        margin-bottom: 5px;
+      }
+
+      .subtitle {
+        color: #4a5568;
+        font-size: 1.2em;
+        font-weight: 500;
+      }
+
+      .chart-container {
+        flex: 1;
+        position: relative;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .legend-custom {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1em;
+        font-weight: 600;
+      }
+
+      .legend-color {
+        width: 30px;
+        height: 20px;
+        border-radius: 4px;
+      }
+
+      .significance-note {
+        text-align: center;
+        margin-top: 15px;
+        color: #e53e3e;
+        font-weight: 600;
+        font-size: 1.1em;
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+        .slide {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide">
+      <div class="header">
+        <h1>Descriptive Statistics and Group Comparison</h1>
+        <p class="subtitle">
+          Comprehensive Analysis with Mean, Standard Deviation, and Statistical
+          Significance
+        </p>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="legend-custom">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #4299e1"></div>
+          <span>No Side-hole Pass (Mean)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #ed8936"></div>
+          <span>At Least One Side-hole Pass (Mean)</span>
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-color"
+            style="
+              background: rgba(226, 232, 240, 0.5);
+              border: 2px solid #718096;
+            "
+          ></div>
+          <span>Standard Deviation Range</span>
+        </div>
+      </div>
+
+      <p class="significance-note">
+        ★ Indicates statistically significant difference (p < 0.05)
+      </p>
+    </div>
+
+    <script>
+      const ctx = document.getElementById("mainChart").getContext("2d");
+
+      // Data
+      const variables = [
+        "Age\n(years)",
+        "Height\n(cm)",
+        "NG length\n(mm) ★",
+        "EX length\n(mm) ★",
+        "NEX length\n(mm) ★",
+        "NE length\n(mm)",
+        "GX length\n(mm)",
+        "GU length\n(mm)",
+      ];
+
+      const noSideholeData = [
+        57.8, 164.1, 488.6, 348.1, 500.0, 151.9, 401.8, 557.6,
+      ];
+      const sideholeData = [
+        57.7, 161.3, 458.4, 368.9, 523.0, 154.0, 404.8, 560.3,
+      ];
+      const totalMean = [57.7, 162.7, 473.5, 358.5, 511.5, 153.0, 403.3, 559.0];
+
+      const sdNoSidehole = [9.4, 6.1, 23.4, 22.8, 27.0, 11.0, 26.7, 31.2];
+      const sdSidehole = [11.7, 8.5, 23.9, 24.5, 28.9, 9.2, 27.1, 38.8];
+      const sdTotal = [10.4, 7.4, 27.9, 25.6, 29.9, 10.0, 26.5, 34.6];
+
+      const pValues = [0.95, 0.339, 0.003, 0.02, 0.036, 0.772, 0.787, 0.494];
+
+      // Calculate error bars (upper and lower bounds)
+      const noSideholeUpper = noSideholeData.map(
+        (val, i) => val + sdNoSidehole[i]
+      );
+      const noSideholeLower = noSideholeData.map(
+        (val, i) => val - sdNoSidehole[i]
+      );
+      const sideholeUpper = sideholeData.map((val, i) => val + sdSidehole[i]);
+      const sideholeLower = sideholeData.map((val, i) => val - sdSidehole[i]);
+
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: variables,
+          datasets: [
+            // SD ranges (filled areas)
+            {
+              label: "No Side-hole SD Range",
+              data: noSideholeUpper,
+              borderColor: "transparent",
+              backgroundColor: "rgba(66, 153, 225, 0.1)",
+              fill: "+1",
+              pointRadius: 0,
+              order: 5,
+            },
+            {
+              label: "No Side-hole SD Lower",
+              data: noSideholeLower,
+              borderColor: "transparent",
+              backgroundColor: "rgba(66, 153, 225, 0.1)",
+              fill: false,
+              pointRadius: 0,
+              order: 5,
+            },
+            {
+              label: "Side-hole SD Range",
+              data: sideholeUpper,
+              borderColor: "transparent",
+              backgroundColor: "rgba(237, 137, 54, 0.1)",
+              fill: "+1",
+              pointRadius: 0,
+              order: 4,
+            },
+            {
+              label: "Side-hole SD Lower",
+              data: sideholeLower,
+              borderColor: "transparent",
+              backgroundColor: "rgba(237, 137, 54, 0.1)",
+              fill: false,
+              pointRadius: 0,
+              order: 4,
+            },
+            // Mean lines
+            {
+              label: "Total Mean",
+              data: totalMean,
+              borderColor: "#a0aec0",
+              backgroundColor: "#a0aec0",
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.3,
+              order: 3,
+            },
+            {
+              label: "No Side-hole Pass",
+              data: noSideholeData,
+              borderColor: "#4299e1",
+              backgroundColor: "#4299e1",
+              borderWidth: 3,
+              pointRadius: 6,
+              pointHoverRadius: 8,
+              pointStyle: "circle",
+              tension: 0.3,
+              order: 1,
+            },
+            {
+              label: "At Least One Side-hole Pass",
+              data: sideholeData,
+              borderColor: "#ed8936",
+              backgroundColor: "#ed8936",
+              borderWidth: 3,
+              pointRadius: 6,
+              pointHoverRadius: 8,
+              pointStyle: "circle",
+              tension: 0.3,
+              order: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: "index",
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              backgroundColor: "rgba(0,0,0,0.9)",
+              padding: 15,
+              titleFont: { size: 14, weight: "bold" },
+              bodyFont: { size: 13 },
+              callbacks: {
+                title: function (context) {
+                  return variables[context[0].dataIndex].replace(/\n/g, " ");
+                },
+                label: function (context) {
+                  const datasetLabel = context.dataset.label;
+                  if (datasetLabel.includes("SD")) return null;
+
+                  const index = context.dataIndex;
+                  const value = context.parsed.y.toFixed(1);
+
+                  if (datasetLabel === "Total Mean") {
+                    return `${datasetLabel}: ${value} (SD: ${sdTotal[index]})`;
+                  } else if (datasetLabel === "No Side-hole Pass") {
+                    return `${datasetLabel}: ${value} (SD: ${sdNoSidehole[index]})`;
+                  } else if (datasetLabel === "At Least One Side-hole Pass") {
+                    return `${datasetLabel}: ${value} (SD: ${sdSidehole[index]})`;
+                  }
+                  return `${datasetLabel}: ${value}`;
+                },
+                afterLabel: function (context) {
+                  const index = context.dataIndex;
+                  if (context.dataset.label !== "At Least One Side-hole Pass")
+                    return null;
+                  return `P-value: ${pValues[index]}${
+                    pValues[index] < 0.05 ? " ★" : ""
+                  }`;
+                },
+                filter: function (tooltipItem) {
+                  return !tooltipItem.dataset.label.includes("SD");
+                },
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: {
+                font: { size: 12 },
+                color: "#4a5568",
+              },
+              grid: {
+                color: "#e2e8f0",
+                drawBorder: false,
+              },
+              title: {
+                display: true,
+                text: "Measurement Value",
+                font: {
+                  size: 14,
+                  weight: "600",
+                },
+                color: "#2d3748",
+              },
+            },
+            x: {
+              ticks: {
+                font: { size: 11, weight: "600" },
+                color: "#2d3748",
+                maxRotation: 0,
+                minRotation: 0,
+              },
+              grid: {
+                display: false,
+              },
+            },
+          },
+          layout: {
+            padding: {
+              top: 20,
+              bottom: 10,
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
